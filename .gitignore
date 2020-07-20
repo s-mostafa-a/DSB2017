@@ -4,3 +4,5 @@ training/.flag*
 prediction*.csv
 .idea/
 venv/
+.DS_Store
+luna16
