@@ -19,7 +19,6 @@ from multiprocessing import Pool
 from functools import partial
 import sys
 sys.path.append('../preprocessing')
-from step1 import step1_python
 import warnings
 
 def resample(imgs, spacing, new_spacing,order=2):
@@ -88,66 +87,6 @@ def lumTrans(img):
     newimg[newimg>1]=1
     newimg = (newimg*255).astype('uint8')
     return newimg
-
-
-def savenpy(id,annos,filelist,data_path,prep_folder):        
-    resolution = np.array([1,1,1])
-    name = filelist[id]
-    label = annos[annos[:,0]==name]
-    label = label[:,[3,1,2,4]].astype('float')
-    
-    im, m1, m2, spacing = step1_python(os.path.join(data_path,name))
-    Mask = m1+m2
-    
-    newshape = np.round(np.array(Mask.shape)*spacing/resolution)
-    xx,yy,zz= np.where(Mask)
-    box = np.array([[np.min(xx),np.max(xx)],[np.min(yy),np.max(yy)],[np.min(zz),np.max(zz)]])
-    box = box*np.expand_dims(spacing,1)/np.expand_dims(resolution,1)
-    box = np.floor(box).astype('int')
-    margin = 5
-    extendbox = np.vstack([np.max([[0,0,0],box[:,0]-margin],0),np.min([newshape,box[:,1]+2*margin],axis=0).T]).T
-    extendbox = extendbox.astype('int')
-
-
-
-    convex_mask = m1
-    dm1 = process_mask(m1)
-    dm2 = process_mask(m2)
-    dilatedMask = dm1+dm2
-    Mask = m1+m2
-    extramask = dilatedMask - Mask
-    bone_thresh = 210
-    pad_value = 170
-    im[np.isnan(im)]=-2000
-    sliceim = lumTrans(im)
-    sliceim = sliceim*dilatedMask+pad_value*(1-dilatedMask).astype('uint8')
-    bones = sliceim*extramask>bone_thresh
-    sliceim[bones] = pad_value
-    sliceim1,_ = resample(sliceim,spacing,resolution,order=1)
-    sliceim2 = sliceim1[extendbox[0,0]:extendbox[0,1],
-                extendbox[1,0]:extendbox[1,1],
-                extendbox[2,0]:extendbox[2,1]]
-    sliceim = sliceim2[np.newaxis,...]
-    np.save(os.path.join(prep_folder,name+'_clean.npy'),sliceim)
-
-    
-    if len(label)==0:
-        label2 = np.array([[0,0,0,0]])
-    elif len(label[0])==0:
-        label2 = np.array([[0,0,0,0]])
-    elif label[0][0]==0:
-        label2 = np.array([[0,0,0,0]])
-    else:
-        haslabel = 1
-        label2 = np.copy(label).T
-        label2[:3] = label2[:3][[0,2,1]]
-        label2[:3] = label2[:3]*np.expand_dims(spacing,1)/np.expand_dims(resolution,1)
-        label2[3] = label2[3]*spacing[1]/resolution[1]
-        label2[:3] = label2[:3]-np.expand_dims(extendbox[:,0],1)
-        label2 = label2[:4].T
-    np.save(os.path.join(prep_folder,name+'_label.npy'),label2)
-
-    print(name)
 
 
 def savenpy_luna(id,annos,filelist,luna_segment,luna_data,savepath):
