@@ -165,6 +165,7 @@ def savenpy_luna(id,annos,filelist,luna_segment,luna_data,savepath):
         
     print(name)
 
+
 def preprocess_luna():
     luna_segment = config['luna_segment']
     savepath = config['preprocess_result_path']
@@ -173,24 +174,19 @@ def preprocess_luna():
     finished_flag = '.flag_preprocessluna'
     print('starting preprocessing luna')
     if not os.path.exists(finished_flag):
-        filelist = [f.split('.mhd')[0] for f in os.listdir(luna_data) if f.endswith('.mhd') ]
+        filelist = [f.split('.mhd')[0] for f in os.listdir(luna_data) if f.endswith('.mhd')]
         annos = np.array(pandas.read_csv(luna_label))
-
         if not os.path.exists(savepath):
             os.mkdir(savepath)
-
-        
         pool = Pool()
-        partial_savenpy_luna = partial(savenpy_luna,annos=annos,filelist=filelist,
-                                       luna_segment=luna_segment,luna_data=luna_data,savepath=savepath)
-
+        partial_savenpy_luna = partial(savenpy_luna, annos=annos, filelist=filelist,
+                                       luna_segment=luna_segment, luna_data=luna_data, savepath=savepath)
         N = len(filelist)
-        #savenpy(1)
-        _=pool.map(partial_savenpy_luna,range(N))
+        _ = pool.map(partial_savenpy_luna, range(N))
         pool.close()
         pool.join()
     print('end preprocessing luna')
-    f= open(finished_flag,"w+")
+    f = open(finished_flag, "w+")
 
 
 def prepare_luna():
